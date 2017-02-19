@@ -103,11 +103,12 @@ class Network:
 
     def _calculate_hidden_layer_errors(self, layer_index):
         # errors = next_weights_transposed * next_errors * slope of activation function
-        dot = np.dot(np.transpose(self.weights[layer_index]), self.errors[layer_index])
+        dot = np.dot(self.weights[layer_index].T, self.errors[layer_index])
         self.errors[layer_index-1] =  dot * self.sigmoid(self.preactivations[layer_index])
 
     def _update_weights(self, layer_index, learning_rate):
-        dot = np.dot(self.errors[layer_index-1], np.transpose(self.activations[layer_index-1]))
+        # dot = np.dot(self.errors[layer_index-1], np.transpose(self.activations[layer_index-1]))
+        dot = np.dot(self.errors[layer_index-1], self.activations[layer_index-1].T)
 
         #TODO: divide by batch size here
         self.weights[layer_index-1] -= learning_rate * dot
@@ -116,6 +117,34 @@ class Network:
         #TODO: divide by batch size here
         self.biases[layer_index-1] -= learning_rate * self.errors[layer_index - 1]
 
+
+
+    def SGD(self, training_data, test_data, epochs = 100, learning_rate=1, batch_size=1):
+        """ Trains this network using stochastic gradient descent.
+            training_data[0] is expected to have a list of 28x28 arrays
+            training_data[1] is expected to have a list of 10x1 arrays, where 1 denotes the correct digit
+            test_data is structured similarly, but is used to validate the training """
+        #TODO: batch support 
+
+        for epoch in range(1, epochs+1):
+            print("Beginning epoch " + str(epoch))
+
+            # Train on all images in training_data
+            for image, label in zip(training_data[0], training_data[1]):
+                self.feed_forward(image.reshape((28*28, 1)))
+                self.back_propagation(label, learning_rate)
+
+            correct_count = 0.
+            for image, label in zip(test_data[0], test_data[1]):
+                result = self.feed_forward(image.reshape((28*28, 1)))
+
+                if self._is_correct(result, label):
+                    correct_count += 1
+
+            print("Number correct: " + str(correct_count) + " of " + str(len(test_data[1])))
+
+    def _is_correct(self, actual, expected):
+        return np.argmax(actual) == np.argmax(expected)
 
 
     @staticmethod

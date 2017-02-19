@@ -42,7 +42,18 @@ def _load_label_file(filename):
 
     labels = np.fromfile(fin, dtype=np.uint8, count=num_labels)
 
-    return labels
+    return _convert_labels_to_arrays(labels)
+
+def _convert_labels_to_arrays(labels):
+    """ Converts a number 0-9 to an array where that index is 1 and others are 0 """
+    label_arrays = []
+    for label in labels:
+        arr = np.zeros((10, 1))
+        arr[label] = 1
+
+        label_arrays.append(arr)
+
+    return label_arrays
 
 def __read_int(fin):
     return struct.unpack('>i', fin.read(4))[0]
