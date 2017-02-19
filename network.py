@@ -3,12 +3,11 @@ import numpy as np
 class Network:
     """ A fully connected Neural Network """
 
-    def __init__(self, layer_sizes, activation_function = ActivationFunctions.sigmoid):
+    def __init__(self, layer_sizes):
         self.layer_sizes = layer_sizes
         self.biases = self._initialize_biases()
         self.weights = self._initialize_weights()
         self.activations = self._initialize_activations()
-        self.activation_function = activation_function
 
     def _initialize_biases(self):
         """ Create a list of numpy arrays for the biases
@@ -61,9 +60,7 @@ class Network:
     def _calculate_activations(self, layer_index):
         preactivations = np.dot(self.weights[layer_index-1], self.activations[layer_index-1]) + self.biases[layer_index-1]
 
-        return self.activation_function(preactivations)
-
-class ActivationFunctions:
+        return self.sigmoid(preactivations)
 
     @staticmethod
     def sigmoid(preactivations):
