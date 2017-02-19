@@ -9,6 +9,14 @@ class Network:
         self.weights = self._initialize_weights()
         self.activations = self._initialize_activations()
 
+    def feed_forward(self, inputs):
+        self._set_inputs(inputs)
+
+        for layer_index in range(1, len(self.activations)):
+            self.activations[layer_index] = self._calculate_activations(layer_index)
+
+        return self.activations[-1]
+
     def _initialize_biases(self):
         """ Create a list of numpy arrays for the biases
             Note: No list is created for the input layer """
@@ -41,14 +49,6 @@ class Network:
             activations.append(np.zeros((size, 1)))
 
         return activations
-
-    def feed_forward(self, inputs):
-        self._set_inputs(inputs)
-
-        for layer_index in range(1, len(self.activations)):
-            self.activations[layer_index] = self._calculate_activations(layer_index)
-
-        return self.activations[-1]
 
     def _set_inputs(self, inputs):
         if(len(inputs) != self.layer_sizes[0]):
