@@ -60,8 +60,8 @@ class Network:
 
     def SGD(self, training_data, test_data, epochs = 100, learning_rate=1.0, batch_size=1):
         """ Trains this network using stochastic gradient descent.
-            training_data[0] is expected to have a list of 28x28 arrays
-            training_data[1] is expected to have a list of 10x1 arrays, where 1 denotes the correct digit
+            training_data[0] is expected to have a list of inputs
+            training_data[1] is expected to have a list of expected outputs
             test_data is structured similarly, but is used to validate the training """
         num_batches = len(training_data[0]) / batch_size
 
