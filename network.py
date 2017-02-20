@@ -1,6 +1,6 @@
 import numpy as np
+import math
 
-#TODO: Back propagation by batch
 class Network:
     """ A fully connected Neural Network """
 
@@ -19,7 +19,7 @@ class Network:
         biases = []
 
         for size in self.layer_sizes[1:]:
-            biases.append(np.random.normal(size=(size, 1)))
+            biases.append(np.random.randn(size, 1) / math.sqrt(size))
 
         return biases
 
@@ -33,7 +33,7 @@ class Network:
             size = self.layer_sizes[index]
             prev_size = self.layer_sizes[index-1]
 
-            weights.append(np.random.normal(size=(size, prev_size)))
+            weights.append(np.random.randn(size, prev_size)/math.sqrt(size * prev_size))
 
         return weights
 
@@ -58,7 +58,42 @@ class Network:
         return errors
 
 
+    def SGD(self, training_data, test_data, epochs = 100, learning_rate=1.0, batch_size=1):
+        """ Trains this network using stochastic gradient descent.
+            training_data[0] is expected to have a list of 28x28 arrays
+            training_data[1] is expected to have a list of 10x1 arrays, where 1 denotes the correct digit
+            test_data is structured similarly, but is used to validate the training """
+        num_batches = len(training_data[0]) / batch_size
 
+        for epoch in range(1, epochs+1):
+            print("Beginning epoch " + str(epoch))
+
+            shuffled_training_data = zip(training_data[0], training_data[1])
+            np.random.shuffle(shuffled_training_data)
+
+            for batch_number in range(0, num_batches):
+                batch = shuffled_training_data[batch_number * batch_size : (batch_number + 1) * batch_size]
+                bias_gradient, weight_gradient = self.back_propagation(batch)
+
+                for layer_index in range(1, len(self.layer_sizes)):
+                    self.biases[layer_index-1] -= float(learning_rate) / batch_size * bias_gradient[layer_index-1]
+                    self.weights[layer_index-1] -= float(learning_rate) / batch_size * weight_gradient[layer_index-1]
+
+            _report_performance(test_data)
+
+
+    def _report_performance(data):
+        correct_count = 0
+        for image, label in zip(test_data[0], test_data[1]):
+            result = self.feed_forward(image.reshape((28*28, 1)))
+
+            if np.argmax(actual) == np.argmx(expected)
+                correct_count += 1
+
+        print("Number correct: " + str(correct_count) + " of " + str(len(test_data[1])))
+
+
+        
     def feed_forward(self, inputs):
         self._set_inputs(inputs)
 
@@ -82,13 +117,19 @@ class Network:
 
 
 
-    def back_propagation(self, expected_outputs, learning_rate = 1):
-        self._calculate_errors(expected_outputs)
+    def back_propagation(self, batch):
+        bias_gradient = [np.zeros(biases.shape) for biases in self.biases]
+        weight_gradient = [np.zeros(weights.shape) for weights in self.weights]
 
-        # Loop from output layer back to first hidden layer
-        for layer_index in range(len(self.layer_sizes) - 1, 0, -1):
-            self._update_weights(layer_index, learning_rate)
-            self._update_biases(layer_index, learning_rate)
+        for image, label in batch:
+            self.feed_forward(image.reshape((28*28, 1)))
+            self._calculate_errors(label)
+
+            for layer_index in range(1, len(self.layer_sizes)):
+                bias_gradient[layer_index-1] += self._calculate_bias_gradient(layer_index)
+                weight_gradient[layer_index-1] += self._calculate_weight_gradient(layer_index)
+
+        return bias_gradient, weight_gradient
 
     def _calculate_errors(self, expected_outputs):
         self._calculate_output_layer_errors(expected_outputs)
@@ -104,47 +145,13 @@ class Network:
     def _calculate_hidden_layer_errors(self, layer_index):
         # errors = next_weights_transposed * next_errors * slope of activation function
         dot = np.dot(self.weights[layer_index].T, self.errors[layer_index])
-        self.errors[layer_index-1] =  dot * self.sigmoid(self.preactivations[layer_index])
+        self.errors[layer_index-1] = dot * self.sigmoid_prime(self.preactivations[layer_index])
 
-    def _update_weights(self, layer_index, learning_rate):
-        # dot = np.dot(self.errors[layer_index-1], np.transpose(self.activations[layer_index-1]))
-        dot = np.dot(self.errors[layer_index-1], self.activations[layer_index-1].T)
-
-        #TODO: divide by batch size here
-        self.weights[layer_index-1] -= learning_rate * dot
-
-    def _update_biases(self, layer_index, learning_rate):
-        #TODO: divide by batch size here
-        self.biases[layer_index-1] -= learning_rate * self.errors[layer_index - 1]
-
-
-
-    def SGD(self, training_data, test_data, epochs = 100, learning_rate=1, batch_size=1):
-        """ Trains this network using stochastic gradient descent.
-            training_data[0] is expected to have a list of 28x28 arrays
-            training_data[1] is expected to have a list of 10x1 arrays, where 1 denotes the correct digit
-            test_data is structured similarly, but is used to validate the training """
-        #TODO: batch support 
-
-        for epoch in range(1, epochs+1):
-            print("Beginning epoch " + str(epoch))
-
-            # Train on all images in training_data
-            for image, label in zip(training_data[0], training_data[1]):
-                self.feed_forward(image.reshape((28*28, 1)))
-                self.back_propagation(label, learning_rate)
-
-            correct_count = 0.
-            for image, label in zip(test_data[0], test_data[1]):
-                result = self.feed_forward(image.reshape((28*28, 1)))
-
-                if self._is_correct(result, label):
-                    correct_count += 1
-
-            print("Number correct: " + str(correct_count) + " of " + str(len(test_data[1])))
-
-    def _is_correct(self, actual, expected):
-        return np.argmax(actual) == np.argmax(expected)
+    def _calculate_bias_gradient(self, layer_index):
+        return self.errors[layer_index-1]
+    
+    def _calculate_weight_gradient(self, layer_index):
+        return np.dot(self.errors[layer_index-1], self.activations[layer_index-1].T)
 
 
     @staticmethod
@@ -153,7 +160,5 @@ class Network:
 
     @staticmethod
     def sigmoid_prime(preactivations):
-        e_to_minus_x = np.exp(-preactivations)
-
-        return e_to_minus_x / np.square(1 + e_to_minus_x)
-
+        sig = Network.sigmoid(preactivations)
+        return sig * (1 - sig)
