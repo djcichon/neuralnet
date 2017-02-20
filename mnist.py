@@ -29,7 +29,7 @@ def _load_image_file(filename):
     pixel_data = np.fromfile(fin, dtype=np.uint8, count=total_pixels)
     images = pixel_data.reshape((num_images, num_rows, num_cols))
 
-    return images
+    return images / 255.0
 
 def _load_label_file(filename):
     """ Loads an MNIST label file, returning a 1 dimensional numpy array """
