@@ -3,6 +3,11 @@ import math
 
 class Network:
     """ A fully connected Neural Network """
+    #TODO: Data reporting/visualization
+    #TODO: Regularization
+    #TODO: Cost functions
+    #TODO: Activation functions
+    #TODO: Layer types (softmax first, convolutional later)
 
     def __init__(self, layer_sizes):
         self.layer_sizes = layer_sizes
@@ -63,16 +68,11 @@ class Network:
             training_data[0] is expected to have a list of inputs
             training_data[1] is expected to have a list of expected outputs
             test_data is structured similarly, but is used to validate the training """
-        num_batches = len(training_data[0]) / batch_size
 
         for epoch in range(1, epochs+1):
             print("Beginning epoch " + str(epoch))
 
-            shuffled_training_data = zip(training_data[0], training_data[1])
-            np.random.shuffle(shuffled_training_data)
-
-            for batch_number in range(0, num_batches):
-                batch = shuffled_training_data[batch_number * batch_size : (batch_number + 1) * batch_size]
+            for batch in Network._get_shuffled_batches(training_data, batch_size):
                 bias_gradient, weight_gradient = self.back_propagation(batch)
 
                 for layer_index in range(1, len(self.layer_sizes)):
@@ -81,6 +81,12 @@ class Network:
 
             self._report_performance(test_data)
 
+    @staticmethod
+    def _get_shuffled_batches(data, batch_size):
+        zipped_data = zip(data[0], data[1])
+        np.random.shuffle(zipped_data)
+
+        return [zipped_data[index:index+batch_size] for index in range(0, len(zipped_data), batch_size)]
 
     def _report_performance(self, data):
         correct_count = 0
