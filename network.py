@@ -1,7 +1,8 @@
 import numpy as np
 import math
+import observable
 
-class Network:
+class Network(observable.Observable):
     """ A fully connected Neural Network """
     #TODO: Data reporting/visualization
     #TODO: Regularization
@@ -10,6 +11,8 @@ class Network:
     #TODO: Layer types (softmax first, convolutional later)
 
     def __init__(self, layer_sizes):
+        observable.Observable.__init__(self)
+
         self.layer_sizes = layer_sizes
         self.biases = self._initialize_biases()
         self.weights = self._initialize_weights()
