@@ -83,7 +83,7 @@ class Network:
 
     @staticmethod
     def _get_shuffled_batches(data, batch_size):
-        zipped_data = zip(data[0], data[1])
+        zipped_data = list(zip(data[0], data[1]))
         np.random.shuffle(zipped_data)
 
         return [zipped_data[index:index+batch_size] for index in range(0, len(zipped_data), batch_size)]

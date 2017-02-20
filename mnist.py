@@ -14,7 +14,7 @@ def load():
 
 def _load_image_file(filename):
     """ Loads an MNIST image file, returning a 3 dimensional numpy array """
-    fin = open(filename)
+    fin = open(filename, 'rb')
 
     # Skip file description, this is static given the context
     __read_int(fin)
@@ -33,7 +33,7 @@ def _load_image_file(filename):
 
 def _load_label_file(filename):
     """ Loads an MNIST label file, returning a 1 dimensional numpy array """
-    fin = open(filename)
+    fin = open(filename, 'rb')
 
     # Skip file description, this is static given the context
     __read_int(fin)
