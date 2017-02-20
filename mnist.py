@@ -27,7 +27,7 @@ def _load_image_file(filename):
     total_pixels = num_images * pixels_per_image
 
     pixel_data = np.fromfile(fin, dtype=np.uint8, count=total_pixels)
-    images = pixel_data.reshape((num_images, num_rows, num_cols))
+    images = pixel_data.reshape((num_images, num_rows * num_cols, 1))
 
     return images / 255.0
 

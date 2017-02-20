@@ -79,18 +79,18 @@ class Network:
                     self.biases[layer_index-1] -= float(learning_rate) / batch_size * bias_gradient[layer_index-1]
                     self.weights[layer_index-1] -= float(learning_rate) / batch_size * weight_gradient[layer_index-1]
 
-            _report_performance(test_data)
+            self._report_performance(test_data)
 
 
-    def _report_performance(data):
+    def _report_performance(self, data):
         correct_count = 0
-        for image, label in zip(test_data[0], test_data[1]):
-            result = self.feed_forward(image.reshape((28*28, 1)))
+        for image, label in zip(data[0], data[1]):
+            result = self.feed_forward(image)
 
-            if np.argmax(actual) == np.argmx(expected)
+            if np.argmax(result) == np.argmax(label):
                 correct_count += 1
 
-        print("Number correct: " + str(correct_count) + " of " + str(len(test_data[1])))
+        print("Number correct: " + str(correct_count) + " of " + str(len(data[1])))
 
 
         
@@ -122,7 +122,7 @@ class Network:
         weight_gradient = [np.zeros(weights.shape) for weights in self.weights]
 
         for image, label in batch:
-            self.feed_forward(image.reshape((28*28, 1)))
+            self.feed_forward(image)
             self._calculate_errors(label)
 
             for layer_index in range(1, len(self.layer_sizes)):
