@@ -3,35 +3,54 @@ import websockets
 from observer import Observer
 from queue import Queue
 from threading import Thread
+from autobahn.asyncio.websocket import WebSocketServerProtocol, WebSocketServerFactory
+
+class WebServerProtocol(WebSocketServerProtocol):
+    def onOpen(self):
+        print("WebSocket connection open.")
+        WebServer.websockets.append(self)
+
+    def onClose(self, wasClean, code, reason):
+        print("WebSocket connection closed: {0}".format(reason))
+        WebServer.websockets.remove(self)
 
 class WebServer(Observer):
-    messages = Queue()
+    #TODO: I'd like a better method of sharing websockets, but this works.
+    #TODO: The other solutions I can think of are to use a singleton or a global.
+    websockets = []
+    notifications = Queue()
 
     def start(self):
         # Start the neural network
         t = Thread(target=self.run_neural_network)
         t.start()
 
-        # Start the webserver
-        start_server = websockets.serve(WebServer.send_queued_messages, '127.0.0.1', 5678)
+        # Start the web server
+        print("Starting web server")
+        factory = WebSocketServerFactory(u"ws://127.0.0.1:5678")
+        factory.protocol = WebServerProtocol
 
-        # Keep server alive, even when network finishes.  
-        asyncio.get_event_loop().run_until_complete(start_server)
-        asyncio.get_event_loop().run_forever()
+        loop = asyncio.get_event_loop()
+        coro = loop.create_server(factory, '0.0.0.0', 5678)
+        server = loop.run_until_complete(coro)
+
+        try:
+            loop.run_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            server.close()
+            loop.close()
 
     def run_neural_network(self):
         raise Exception("Override run_neural_network with your own neural net code");
 
     def notify(self, observable, *args, **kwargs):
-        self.messages.put(str(*args))
+        self.notifications.put(str(*args).encode("utf-8"))
+        
+        if len(WebServer.websockets) > 0:
+            while not self.notifications.empty():
+                notification = self.notifications.get()
 
-    @staticmethod
-    @asyncio.coroutine
-    def send_queued_messages(websocket, path):
-        print("A user connected.")
-
-        messages = WebServer.messages
-
-        while True:
-            message = messages.get()
-            yield from websocket.send(message)
+                for connection in WebServer.websockets:
+                    connection.sendMessage(notification, False)
