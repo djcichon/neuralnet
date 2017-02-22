@@ -74,6 +74,7 @@ class Network(observable.Observable):
 
         for epoch in range(1, epochs+1):
             print("Beginning epoch " + str(epoch))
+            self.notify_observers("Beginning epoch " + str(epoch))
 
             for batch in Network._get_shuffled_batches(training_data, batch_size):
                 bias_gradient, weight_gradient = self.back_propagation(batch)
@@ -100,6 +101,7 @@ class Network(observable.Observable):
                 correct_count += 1
 
         print("Number correct: " + str(correct_count) + " of " + str(len(data[1])))
+        self.notify_observers("Number correct: " + str(correct_count) + " of " + str(len(data[1])))
 
 
         
