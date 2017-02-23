@@ -1,4 +1,5 @@
 import asyncio
+import json
 import websockets
 from observer import Observer
 from queue import Queue
@@ -46,7 +47,8 @@ class WebServer(Observer):
         raise Exception("Override run_neural_network with your own neural net code");
 
     def notify(self, observable, *args, **kwargs):
-        self.notifications.put(str(*args).encode("utf-8"))
+        json_message = json.dumps({'type': args[0], 'value': args[1]})
+        self.notifications.put(json_message.encode('utf-8'))
         
         if len(WebServer.websockets) > 0:
             while not self.notifications.empty():

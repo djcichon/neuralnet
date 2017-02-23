@@ -2,19 +2,40 @@
 <html>
     <head>
         <title>WebSocket demo</title>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     </head>
     <body>
-        <script>
-            var ws = new WebSocket("ws://127.0.0.1:5678/"),
-                messages = document.createElement('ul');
-                ws.onmessage = function (event) {
-                var messages = document.getElementsByTagName('ul')[0],
-                    message = document.createElement('li'),
-                    content = document.createTextNode(event.data);
-                message.appendChild(content);
-                messages.appendChild(message);
-            };
-            document.body.appendChild(messages);
-        </script>
+        <section class="graphs">
+            <div id="costGraph" style="width: 800px; float: left"></div>
+            <div id="accuracyGraph" style="width: 800px; margin-left: 800px"></div>
+        </section>
     </body>
+    <script>
+        var ws = new WebSocket("ws://127.0.0.1:5678/"),
+            messages = document.createElement('ul');
+
+        Plotly.plot('costGraph', [{ y: [], mode: 'lines', line: {color: 'red', width: 2} }], { title: 'Cost' });
+        Plotly.plot('accuracyGraph', [{ y: [], mode: 'lines', line: {color: 'green', width: 2} }], { title: 'Test Accuracy' });
+        document.body.appendChild(messages);
+
+        ws.onmessage = function (event) {
+          var messages = document.getElementsByTagName('ul')[0],
+              message = document.createElement('li'),
+              data = JSON.parse(event.data);
+
+          if(data.type === 'log') {
+            content = document.createTextNode(data.value);
+            message.appendChild(content);
+            messages.appendChild(message);
+          }
+          else if(data.type === 'cost') {
+            Plotly.extendTraces('costGraph', { y: [[data.value]] }, [0]);
+          }
+          else if(data.type === 'accuracy') {
+            Plotly.extendTraces('accuracyGraph', { y: [[data.value]] }, [0]);
+          }
+
+
+        };
+    </script>
 </html>

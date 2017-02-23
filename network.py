@@ -74,14 +74,22 @@ class Network(observable.Observable):
 
         for epoch in range(1, epochs+1):
             print("Beginning epoch " + str(epoch))
-            self.notify_observers("Beginning epoch " + str(epoch))
+            self.notify_observers('log', "Beginning epoch " + str(epoch))
 
-            for batch in Network._get_shuffled_batches(training_data, batch_size):
-                bias_gradient, weight_gradient = self.back_propagation(batch)
+            cost_sum = 0
+            for idx, batch in enumerate(Network._get_shuffled_batches(training_data, batch_size)):
+                bias_gradient, weight_gradient, cost = self.back_propagation(batch)
 
                 for layer_index in range(1, len(self.layer_sizes)):
                     self.biases[layer_index-1] -= float(learning_rate) / batch_size * bias_gradient[layer_index-1]
                     self.weights[layer_index-1] -= float(learning_rate) / batch_size * weight_gradient[layer_index-1]
+
+                cost_sum += cost
+
+                if idx % 1000 == 999:
+                    self.notify_observers('cost', cost_sum)
+                    cost_sum = 0
+
 
             self._report_performance(test_data)
 
@@ -101,7 +109,8 @@ class Network(observable.Observable):
                 correct_count += 1
 
         print("Number correct: " + str(correct_count) + " of " + str(len(data[1])))
-        self.notify_observers("Number correct: " + str(correct_count) + " of " + str(len(data[1])))
+        self.notify_observers('log', "Number correct: " + str(correct_count) + " of " + str(len(data[1])))
+        self.notify_observers('accuracy', float(correct_count) / len(data[1]))
 
 
         
@@ -131,16 +140,22 @@ class Network(observable.Observable):
     def back_propagation(self, batch):
         bias_gradient = [np.zeros(biases.shape) for biases in self.biases]
         weight_gradient = [np.zeros(weights.shape) for weights in self.weights]
+        cost = 0
 
         for image, label in batch:
             self.feed_forward(image)
             self._calculate_errors(label)
+            cost += self._calculate_cost(label, self.activations[-1])
 
             for layer_index in range(1, len(self.layer_sizes)):
                 bias_gradient[layer_index-1] += self._calculate_bias_gradient(layer_index)
                 weight_gradient[layer_index-1] += self._calculate_weight_gradient(layer_index)
+        
+        return bias_gradient, weight_gradient, cost
 
-        return bias_gradient, weight_gradient
+    @staticmethod
+    def _calculate_cost(expected, actual):
+        return np.sum(np.square(expected - actual))
 
     def _calculate_errors(self, expected_outputs):
         self._calculate_output_layer_errors(expected_outputs)
