@@ -1,21 +1,35 @@
 import numpy as np
 import math
 
+class CostFunction:
+    @staticmethod
+    def cost_derivative(actual, expected, preactivations):
+        raise Exception("Must implement cost_derivative()")
+
+class QuadraticCost(CostFunction):
+    @staticmethod
+    def cost_derivative(actual, expected, preactivations):
+       return (actual - expected) * sigmoid_prime(preactivations)
+
+class CrossEntropy(CostFunction):
+    @staticmethod
+    def cost_derivative(actual, expected, preactivations):
+       return (actual - expected)
+
 class Network:
     """ A fully connected Neural Network """
-    #TODO: Data reporting/visualization
     #TODO: Regularization
-    #TODO: Cost functions
     #TODO: Activation functions
     #TODO: Layer types (softmax first, convolutional later)
 
-    def __init__(self, layer_sizes):
+    def __init__(self, layer_sizes, cost_function=CrossEntropy):
         self.layer_sizes = layer_sizes
         self.biases = self._initialize_biases()
         self.weights = self._initialize_weights()
         self.activations = self._initialize_activations()
         self.preactivations = self._initialize_activations()
         self.errors = self._initialize_errors()
+        self.cost_function = cost_function
 
     def _initialize_biases(self):
         """ Create a list of numpy arrays for the biases; one per neuron
@@ -119,7 +133,7 @@ class Network:
         preactivations = np.dot(self.weights[layer_index-1], self.activations[layer_index-1]) + self.biases[layer_index-1]
         self.preactivations[layer_index] = preactivations
 
-        return self.sigmoid(preactivations)
+        return sigmoid(preactivations)
 
 
 
@@ -146,12 +160,12 @@ class Network:
 
     def _calculate_output_layer_errors(self, expected_outputs):
         # errors = (actual - expected) * slope of activation function
-        self.errors[-1] = (self.activations[-1] - expected_outputs) * self.sigmoid_prime(self.preactivations[-1])
+        self.errors[-1] = self.cost_function.cost_derivative(self.activations[-1], expected_outputs, self.preactivations[-1])
 
     def _calculate_hidden_layer_errors(self, layer_index):
         # errors = next_weights_transposed * next_errors * slope of activation function
         dot = np.dot(self.weights[layer_index].T, self.errors[layer_index])
-        self.errors[layer_index-1] = dot * self.sigmoid_prime(self.preactivations[layer_index])
+        self.errors[layer_index-1] = dot * sigmoid_prime(self.preactivations[layer_index])
 
     def _calculate_bias_gradient(self, layer_index):
         return self.errors[layer_index-1]
@@ -160,11 +174,10 @@ class Network:
         return np.dot(self.errors[layer_index-1], self.activations[layer_index-1].T)
 
 
-    @staticmethod
-    def sigmoid(preactivations):
-        return 1 / (1 + np.exp(-preactivations))
+def sigmoid(preactivations):
+    return 1 / (1 + np.exp(-preactivations))
 
-    @staticmethod
-    def sigmoid_prime(preactivations):
-        sig = Network.sigmoid(preactivations)
-        return sig * (1 - sig)
+def sigmoid_prime(preactivations):
+    sig = sigmoid(preactivations)
+    return sig * (1 - sig)
+
