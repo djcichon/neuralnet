@@ -18,7 +18,6 @@ class CrossEntropy(CostFunction):
 
 class Network:
     """ A fully connected Neural Network """
-    #TODO: Regularization
     #TODO: Activation functions
     #TODO: Layer types (softmax first, convolutional later)
 
@@ -77,7 +76,7 @@ class Network:
         return errors
 
 
-    def SGD(self, training_data, test_data, epochs = 100, learning_rate=1.0, batch_size=1):
+    def SGD(self, training_data, test_data, epochs = 100, learning_rate=1.0, regularization=0.0, batch_size=1):
         """ Trains this network using stochastic gradient descent.
             training_data[0] is expected to have a list of inputs
             training_data[1] is expected to have a list of expected outputs
@@ -91,7 +90,8 @@ class Network:
 
                 for layer_index in range(1, len(self.layer_sizes)):
                     self.biases[layer_index-1] -= float(learning_rate) / batch_size * bias_gradient[layer_index-1]
-                    self.weights[layer_index-1] -= float(learning_rate) / batch_size * weight_gradient[layer_index-1]
+                    self.weights[layer_index-1] -= (float(learning_rate) / batch_size * weight_gradient[layer_index-1] +
+                        (learning_rate * regularization / len(training_data[0])) * self.weights[layer_index-1])
 
             self._report_performance(test_data)
 
