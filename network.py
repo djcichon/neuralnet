@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from layer import Layer
 
 class CostFunction:
     @staticmethod
@@ -22,59 +23,19 @@ class Network:
     #TODO: Layer types (softmax first, convolutional later)
 
     def __init__(self, layer_sizes, cost_function=CrossEntropy):
-        self.layer_sizes = layer_sizes
-        self.biases = self._initialize_biases()
-        self.weights = self._initialize_weights()
-        self.activations = self._initialize_activations()
-        self.preactivations = self._initialize_activations()
-        self.errors = self._initialize_errors()
+        self._initialize_layers(layer_sizes)    
         self.cost_function = cost_function
 
-    def _initialize_biases(self):
-        """ Create a list of numpy arrays for the biases; one per neuron
-            Note: No list is created for the input layer """
+    def _initialize_layers(self, layer_sizes):
+        # Create all the layers (unconnected)
+        self.layers = [Layer(layer_size) for layer_size in layer_sizes]
 
-        biases = []
+        # Connect all the layers to their neighbors
+        for i in range(0, len(self.layers)):
+            prev_layer = self.layers[i - 1] if i > 0 else None
+            next_layer = self.layers[i + 1] if i + 1 < len(self.layers) else None
 
-        for size in self.layer_sizes[1:]:
-            biases.append(np.random.randn(size, 1) / math.sqrt(size))
-
-        return biases
-
-    def _initialize_weights(self):
-        """ Create a list of numpy arrays for the weights (layer_size x prev_layer_size)
-            Note: No list is created for the input layer """
-
-        weights = []
-
-        for index in range(1, len(self.layer_sizes)):
-            size = self.layer_sizes[index]
-            prev_size = self.layer_sizes[index-1]
-
-            weights.append(np.random.randn(size, prev_size)/math.sqrt(size * prev_size))
-
-        return weights
-
-    def _initialize_activations(self):
-        """ Create a list of numpy arrays for activations; one per neuron """
-        activations = []
-
-        for size in self.layer_sizes:
-            activations.append(np.zeros((size, 1)))
-
-        return activations
-
-    def _initialize_errors(self):
-        """ Create a list of numpy arrays for errors; one per neuron
-            Note: No list is created for the input layer """
-
-        errors = []
-
-        for size in self.layer_sizes[1:]:
-            errors.append(np.zeros((size, 1)))
-
-        return errors
-
+            self.layers[i].connect_to_neighbors(prev_layer, next_layer)
 
     def SGD(self, training_data, test_data, epochs = 100, learning_rate=1.0, regularization=0.0, batch_size=1):
         """ Trains this network using stochastic gradient descent.
@@ -86,12 +47,14 @@ class Network:
             print("Beginning epoch " + str(epoch))
 
             for batch in Network._get_shuffled_batches(training_data, batch_size):
-                bias_gradient, weight_gradient = self.back_propagation(batch)
+                self.back_propagation(batch)
 
-                for layer_index in range(1, len(self.layer_sizes)):
-                    self.biases[layer_index-1] -= float(learning_rate) / batch_size * bias_gradient[layer_index-1]
-                    self.weights[layer_index-1] -= (float(learning_rate) / batch_size * weight_gradient[layer_index-1] +
-                        (learning_rate * regularization / len(training_data[0])) * self.weights[layer_index-1])
+                for layer in self.layers[1:len(self.layers)]:
+                    layer.biases -= float(learning_rate) / batch_size * layer.bias_gradient
+
+                    layer.weights -= (float(learning_rate) / batch_size * layer.weight_gradient +
+                        (learning_rate * regularization / len(training_data[0])) * layer.weights)
+
 
             self._report_performance(test_data)
 
@@ -112,66 +75,46 @@ class Network:
 
         print("Number correct: " + str(correct_count) + " of " + str(len(data[1])))
 
-
         
     def feed_forward(self, inputs):
         self._set_inputs(inputs)
 
-        for layer_index in range(1, len(self.activations)):
-            self.activations[layer_index] = self._calculate_activations(layer_index)
+        for layer in self.layers[:len(self.layers) - 1]:
+            layer.forward()
 
-        return self.activations[-1]
+        return self.layers[-1].activations
 
     def _set_inputs(self, inputs):
-        if(len(inputs) != self.layer_sizes[0]):
-            raise Exception('Expected inputs of length ' + str(self.layer_sizes[0]) + ' but was ' + str(len(inputs)))
+        if(len(inputs) != self.layers[0].size):
+            raise Exception('Expected inputs of length ' + str(self.layers[0].size) + ' but was ' + str(len(inputs)))
 
         # Copy from inputs into activations
-        self.activations[0][:] = inputs
-
-    def _calculate_activations(self, layer_index):
-        preactivations = np.dot(self.weights[layer_index-1], self.activations[layer_index-1]) + self.biases[layer_index-1]
-        self.preactivations[layer_index] = preactivations
-
-        return sigmoid(preactivations)
-
+        self.layers[0].activations = inputs
 
 
     def back_propagation(self, batch):
-        bias_gradient = [np.zeros(biases.shape) for biases in self.biases]
-        weight_gradient = [np.zeros(weights.shape) for weights in self.weights]
+        # TODO: This may not be necessary if I calculate gradients in one large matrix operation like in octave
+        self._reset_gradients()
 
         for image, label in batch:
             self.feed_forward(image)
             self._calculate_errors(label)
 
-            for layer_index in range(1, len(self.layer_sizes)):
-                bias_gradient[layer_index-1] += self._calculate_bias_gradient(layer_index)
-                weight_gradient[layer_index-1] += self._calculate_weight_gradient(layer_index)
+            for layer in self.layers[1:len(self.layers)]:
+                if layer.bias_gradient is not None:
+                    layer.bias_gradient += layer.calculate_bias_gradient()
 
-        return bias_gradient, weight_gradient
+                if layer.weight_gradient is not None:
+                    layer.weight_gradient += layer.calculate_weight_gradient()
+
+    def _reset_gradients(self):
+        for layer in self.layers[1:len(self.layers)]:
+            layer.reset_gradients()
+
 
     def _calculate_errors(self, expected_outputs):
-        self._calculate_output_layer_errors(expected_outputs)
-
-        # Loop from last hidden layer back to the first hidden layer
-        for layer_index in range(len(self.layer_sizes) - 2, 0, -1):
-            self._calculate_hidden_layer_errors(layer_index)
-
-    def _calculate_output_layer_errors(self, expected_outputs):
-        # errors = (actual - expected) * slope of activation function
-        self.errors[-1] = self.cost_function.cost_derivative(self.activations[-1], expected_outputs, self.preactivations[-1])
-
-    def _calculate_hidden_layer_errors(self, layer_index):
-        # errors = next_weights_transposed * next_errors * slope of activation function
-        dot = np.dot(self.weights[layer_index].T, self.errors[layer_index])
-        self.errors[layer_index-1] = dot * sigmoid_prime(self.preactivations[layer_index])
-
-    def _calculate_bias_gradient(self, layer_index):
-        return self.errors[layer_index-1]
-    
-    def _calculate_weight_gradient(self, layer_index):
-        return np.dot(self.errors[layer_index-1], self.activations[layer_index-1].T)
+        for layer in reversed(self.layers[1:]):
+            layer.calculate_errors(expected_outputs, self.cost_function.cost_derivative)
 
 
 def sigmoid(preactivations):
