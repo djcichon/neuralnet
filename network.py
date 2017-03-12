@@ -1,5 +1,4 @@
 import numpy as np
-import math
 from layer import Layer
 from cost import *
 from util import *
