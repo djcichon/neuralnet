@@ -1,21 +1,8 @@
 import numpy as np
 import math
 from layer import Layer
-
-class CostFunction:
-    @staticmethod
-    def cost_derivative(actual, expected, preactivations):
-        raise Exception("Must implement cost_derivative()")
-
-class QuadraticCost(CostFunction):
-    @staticmethod
-    def cost_derivative(actual, expected, preactivations):
-       return (actual - expected) * sigmoid_prime(preactivations)
-
-class CrossEntropy(CostFunction):
-    @staticmethod
-    def cost_derivative(actual, expected, preactivations):
-       return (actual - expected)
+from cost import *
+from util import *
 
 class Network:
     """ A fully connected Neural Network """
@@ -116,11 +103,4 @@ class Network:
         for layer in reversed(self.layers[1:]):
             layer.calculate_errors(expected_outputs, self.cost_function.cost_derivative)
 
-
-def sigmoid(preactivations):
-    return 1 / (1 + np.exp(-preactivations))
-
-def sigmoid_prime(preactivations):
-    sig = sigmoid(preactivations)
-    return sig * (1 - sig)
 

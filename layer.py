@@ -1,5 +1,6 @@
 import numpy as np
 import math
+from util import *
 
 class Layer:
 
@@ -50,12 +51,4 @@ class Layer:
     
     def calculate_weight_gradient(self):
         return np.dot(self.errors, self.prev.activations.T)
-
-#TODO: These need to only be in one place, do I need a util file?
-def sigmoid(preactivations):
-    return 1 / (1 + np.exp(-preactivations))
-
-def sigmoid_prime(preactivations):
-    sig = sigmoid(preactivations)
-    return sig * (1 - sig)
 
