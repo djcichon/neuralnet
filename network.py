@@ -64,20 +64,12 @@ class Network:
 
         
     def feed_forward(self, inputs):
-        self._set_inputs(inputs)
+        self.layers[0].activations = inputs
 
         for layer in self.layers[:len(self.layers) - 1]:
             layer.forward()
 
         return self.layers[-1].activations
-
-    def _set_inputs(self, inputs):
-        if(len(inputs) != self.layers[0].size):
-            raise Exception('Expected inputs of length ' + str(self.layers[0].size) + ' but was ' + str(len(inputs)))
-
-        # Copy from inputs into activations
-        self.layers[0].activations = inputs
-
 
     def back_propagation(self, batch):
         # TODO: This may not be necessary if I calculate gradients in one large matrix operation like in octave
