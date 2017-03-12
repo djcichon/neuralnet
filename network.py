@@ -24,6 +24,26 @@ class Network:
 
             self.layers[i].connect_to_neighbors(prev_layer, next_layer)
 
+    def feed_forward(self, inputs):
+        self.layers[0].activations = inputs
+
+        for layer in self.layers[:len(self.layers) - 1]:
+            layer.forward()
+
+        return self.layers[-1].activations
+
+    def back_propagation(self, batch):
+        # TODO: This may not be necessary if I calculate gradients in one large matrix operation like in octave
+        self._reset_gradients()
+
+        for image, label in batch:
+            self.feed_forward(image)
+            self._calculate_errors(label)
+
+            for layer in self.layers[1:len(self.layers)]:
+                layer.bias_gradient += layer.calculate_bias_gradient()
+                layer.weight_gradient += layer.calculate_weight_gradient()
+
     def SGD(self, training_data, test_data, epochs = 100, learning_rate=1.0, regularization=0.0, batch_size=1):
         """ Trains this network using stochastic gradient descent.
             training_data[0] is expected to have a list of inputs
@@ -61,30 +81,6 @@ class Network:
                 correct_count += 1
 
         print("Number correct: " + str(correct_count) + " of " + str(len(data[1])))
-
-        
-    def feed_forward(self, inputs):
-        self.layers[0].activations = inputs
-
-        for layer in self.layers[:len(self.layers) - 1]:
-            layer.forward()
-
-        return self.layers[-1].activations
-
-    def back_propagation(self, batch):
-        # TODO: This may not be necessary if I calculate gradients in one large matrix operation like in octave
-        self._reset_gradients()
-
-        for image, label in batch:
-            self.feed_forward(image)
-            self._calculate_errors(label)
-
-            for layer in self.layers[1:len(self.layers)]:
-                if layer.bias_gradient is not None:
-                    layer.bias_gradient += layer.calculate_bias_gradient()
-
-                if layer.weight_gradient is not None:
-                    layer.weight_gradient += layer.calculate_weight_gradient()
 
     def _reset_gradients(self):
         for layer in self.layers[1:len(self.layers)]:
