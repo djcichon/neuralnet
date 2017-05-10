@@ -5,7 +5,8 @@ will run it against the MNIST dataset.  With the default configuration (100 hidd
 
 # Installation
 
-```git clone https://github.com/djcichon/neuralnet
+```
+git clone https://github.com/djcichon/neuralnet
 cd neuralnet
 pip install -r requirements.txt
 ```
