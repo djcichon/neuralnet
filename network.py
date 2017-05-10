@@ -5,8 +5,6 @@ from util import *
 
 class Network:
     """ A fully connected Neural Network """
-    #TODO: Activation functions
-    #TODO: Layer types (softmax first, convolutional later)
 
     def __init__(self, layer_sizes, cost_function=CrossEntropy):
         self._initialize_layers(layer_sizes)    
