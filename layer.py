@@ -13,6 +13,8 @@ class Layer:
         self.weight_gradient = None
 
         self.size = size
+
+        # TODO: These are misleading.  I think these get overridden elsewhere anyways...
         self.activations = np.zeros((size, 1))
         self.preactivations = np.zeros((size, 1))
         self.errors = np.zeros((size, 1))
@@ -42,12 +44,8 @@ class Layer:
             # The hidden layers feed errors backwards
             self.errors = np.dot(self.next.weights.T, self.next.errors) * sigmoid_prime(self.preactivations)
 
-    def reset_gradients(self):
-        self.bias_gradient.fill(0)
-        self.weight_gradient.fill(0)
-
     def calculate_bias_gradient(self):
-        return self.errors
+        return np.sum(self.errors, axis=1, keepdims=True)
     
     def calculate_weight_gradient(self):
         return np.dot(self.errors, self.prev.activations.T)

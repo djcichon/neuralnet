@@ -27,7 +27,7 @@ def _load_image_file(filename):
     total_pixels = num_images * pixels_per_image
 
     pixel_data = np.fromfile(fin, dtype=np.uint8, count=total_pixels)
-    images = pixel_data.reshape((num_images, num_rows * num_cols, 1))
+    images = pixel_data.reshape((num_images, num_rows * num_cols)).T
 
     return images / 255.0
 
@@ -46,12 +46,9 @@ def _load_label_file(filename):
 
 def _convert_labels_to_arrays(labels):
     """ Converts a number 0-9 to an array where that index is 1 and others are 0 """
-    label_arrays = []
-    for label in labels:
-        arr = np.zeros((10, 1))
-        arr[label] = 1
-
-        label_arrays.append(arr)
+    label_arrays = np.zeros((10, len(labels)))
+    for example_index, label in enumerate(labels):
+        label_arrays[label][example_index] = 1
 
     return label_arrays
 

@@ -7,7 +7,7 @@ class Network:
     """ A fully connected Neural Network """
 
     def __init__(self, layer_sizes, cost_function=CrossEntropy):
-        self._initialize_layers(layer_sizes)    
+        self._initialize_layers(layer_sizes)
         self.cost_function = cost_function
 
     def _initialize_layers(self, layer_sizes):
@@ -30,16 +30,12 @@ class Network:
         return self.layers[-1].activations
 
     def back_propagation(self, batch):
-        # TODO: This may not be necessary if I calculate gradients in one large matrix operation like in octave
-        self._reset_gradients()
+        self.feed_forward(batch[0])
+        self._calculate_errors(batch[1])
 
-        for image, label in batch:
-            self.feed_forward(image)
-            self._calculate_errors(label)
-
-            for layer in self.layers[1:len(self.layers)]:
-                layer.bias_gradient += layer.calculate_bias_gradient()
-                layer.weight_gradient += layer.calculate_weight_gradient()
+        for layer in self.layers[1:len(self.layers)]:
+            layer.bias_gradient = layer.calculate_bias_gradient()
+            layer.weight_gradient = layer.calculate_weight_gradient()
 
     def SGD(self, training_data, test_data, epochs = 100, learning_rate=1.0, regularization=0.0, batch_size=1):
         """ Trains this network using stochastic gradient descent.
@@ -57,27 +53,35 @@ class Network:
                     layer.biases -= float(learning_rate) / batch_size * layer.bias_gradient
 
                     layer.weights -= (float(learning_rate) / batch_size * layer.weight_gradient +
-                        (learning_rate * regularization / len(training_data[0])) * layer.weights)
+                        (learning_rate * regularization / training_data[0].shape[1]) * layer.weights)
 
 
             self._report_performance(test_data)
 
     @staticmethod
     def _get_shuffled_batches(data, batch_size):
-        zipped_data = list(zip(data[0], data[1]))
-        np.random.shuffle(zipped_data)
+	total_examples = data[0].shape[1]
+	permutation = list(np.random.permutation(total_examples))
 
-        return [zipped_data[index:index+batch_size] for index in range(0, len(zipped_data), batch_size)]
+	shuffled_X = data[0][:, permutation]
+	shuffled_Y = data[1][:, permutation]
+
+	return [[shuffled_X[:, index:index + batch_size], shuffled_Y[:, index:index + batch_size]] for index in range(0, total_examples, batch_size)]
 
     def _report_performance(self, data):
-        correct_count = 0
-        for image, label in zip(data[0], data[1]):
-            result = self.feed_forward(image)
+        result = self.feed_forward(data[0])
 
-            if np.argmax(result) == np.argmax(label):
-                correct_count += 1
+        # Calculate the expected/actual number which is predicted
+        expected = np.argmax(data[1], axis=0)
+        actual = np.argmax(result, axis=0)
 
-        print("Number correct: " + str(correct_count) + " of " + str(len(data[1])))
+        # Combine actual/expected into a list where True = correct, False = incorrect
+        correct_predictions = (actual == expected)
+
+        # Aggregate this list into a number of correct predictions
+        correct_count = np.sum(correct_predictions)
+
+        print("Number correct: " + str(correct_count) + " of " + str(data[0].shape[1]))
 
     def _reset_gradients(self):
         for layer in self.layers[1:len(self.layers)]:
@@ -87,5 +91,3 @@ class Network:
     def _calculate_errors(self, expected_outputs):
         for layer in reversed(self.layers[1:]):
             layer.calculate_errors(expected_outputs, self.cost_function.cost_derivative)
-
-
