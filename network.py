@@ -1,7 +1,6 @@
 import numpy as np
 from layer import Layer
 from cost import *
-from util import *
 from activation import *
 
 class Network:
@@ -54,7 +53,8 @@ class Network:
                         (learning_rate * regularization / training_data[0].shape[1]) * layer.weights)
 
 
-            self._report_performance(test_data)
+            self._report_performance(training_data, "TRAIN")
+            self._report_performance(test_data, "TEST ")
 
     @staticmethod
     def _get_shuffled_batches(data, batch_size):
@@ -66,7 +66,7 @@ class Network:
 
 	return [[shuffled_X[:, index:index + batch_size], shuffled_Y[:, index:index + batch_size]] for index in range(0, total_examples, batch_size)]
 
-    def _report_performance(self, data):
+    def _report_performance(self, data, label):
         result = self.feed_forward(data[0])
 
         # Calculate the expected/actual number which is predicted
@@ -79,7 +79,7 @@ class Network:
         # Aggregate this list into a number of correct predictions
         correct_count = np.sum(correct_predictions)
 
-        print("Number correct: " + str(correct_count) + " of " + str(data[0].shape[1]))
+        print("Accuracy on " + label + ": " + "{0:.2f}".format(100. * correct_count / data[0].shape[1]) + "%")
 
     def _reset_gradients(self):
         for layer in self.layers[1:len(self.layers)]:
