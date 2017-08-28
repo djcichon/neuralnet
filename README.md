@@ -13,7 +13,6 @@ pip install -r requirements.txt
 
 # Planned Features
 
-1. Abstract activation functions, similar to cost functions
-2. Implement ReLU
-3. Implement dropout
-4. Layer types (i.e. fully connected, softmax, convolutional)
+1. Implement dropout
+2. Improve performance by restricting memory allocations
+3. Layer types (i.e. fully connected, softmax, convolutional)

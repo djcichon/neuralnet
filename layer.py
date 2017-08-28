@@ -4,7 +4,7 @@ from util import *
 
 class Layer:
 
-    def __init__(self, size):
+    def __init__(self, size, activation_function):
         self.next = None
         self.prev = None
         self.biases = None
@@ -13,18 +13,20 @@ class Layer:
         self.weight_gradient = None
 
         self.size = size
+        self.activation_function = activation_function
 
         # TODO: These are misleading.  I think these get overridden elsewhere anyways...
         self.activations = np.zeros((size, 1))
         self.preactivations = np.zeros((size, 1))
         self.errors = np.zeros((size, 1))
 
-    def connect_to_neighbors(self, prev_layer, next_layer):
+    def connect_to_previous_layer(self, prev_layer):
         self.prev = prev_layer
-        self.next = next_layer
 
         # Weights & biases should only be defined after the previous layer is known
         if prev_layer:
+            self.prev.next = self
+            
             self.weights = np.random.randn(self.size, prev_layer.size)/math.sqrt(self.size * prev_layer.size)
             self.weight_gradient = np.empty(self.weights.shape)
 
@@ -34,7 +36,7 @@ class Layer:
     # Populates the next layer using this layer's activations, weights, and biases
     def forward(self):
         self.next.preactivations = np.dot(self.next.weights, self.activations) + self.next.biases
-        self.next.activations = sigmoid(self.next.preactivations)
+        self.next.activations = self.activation_function.apply(self.next.preactivations)
 
     def calculate_errors(self, expected_outputs, cost_derivative):
         if self.next == None:
@@ -42,7 +44,7 @@ class Layer:
             self.errors = cost_derivative(self.activations, expected_outputs, self.preactivations)
         else:
             # The hidden layers feed errors backwards
-            self.errors = np.dot(self.next.weights.T, self.next.errors) * sigmoid_prime(self.preactivations)
+            self.errors = np.dot(self.next.weights.T, self.next.errors) * self.activation_function.apply_derivative(self.preactivations)
 
     def calculate_bias_gradient(self):
         return np.sum(self.errors, axis=1, keepdims=True)

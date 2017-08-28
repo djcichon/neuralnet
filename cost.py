@@ -12,5 +12,5 @@ class QuadraticCost(CostFunction):
 class CrossEntropy(CostFunction):
     @staticmethod
     def cost_derivative(actual, expected, preactivations):
-       return (actual - expected)
+        return (actual - expected)
 

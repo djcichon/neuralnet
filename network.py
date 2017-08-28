@@ -2,24 +2,22 @@ import numpy as np
 from layer import Layer
 from cost import *
 from util import *
+from activation import *
 
 class Network:
     """ A fully connected Neural Network """
 
-    def __init__(self, layer_sizes, cost_function=CrossEntropy):
-        self._initialize_layers(layer_sizes)
+    def __init__(self, cost_function=CrossEntropy):
+        self.layers = []
         self.cost_function = cost_function
 
-    def _initialize_layers(self, layer_sizes):
-        # Create all the layers (unconnected)
-        self.layers = [Layer(layer_size) for layer_size in layer_sizes]
+    def add_layer(self, size, activation_function=Sigmoid):
+        prev_layer = self.layers[-1] if len(self.layers) > 0 else None
+        curr_layer = Layer(size, activation_function)
 
-        # Connect all the layers to their neighbors
-        for i in range(0, len(self.layers)):
-            prev_layer = self.layers[i - 1] if i > 0 else None
-            next_layer = self.layers[i + 1] if i + 1 < len(self.layers) else None
+        self.layers.append(curr_layer)
 
-            self.layers[i].connect_to_neighbors(prev_layer, next_layer)
+        curr_layer.connect_to_previous_layer(prev_layer)
 
     def feed_forward(self, inputs):
         self.layers[0].activations = inputs
