@@ -43,30 +43,46 @@ class Network:
         for epoch in range(1, epochs+1):
             print("Beginning epoch " + str(epoch))
 
+            for layer in self.layers:
+                layer.initialize_matrices(batch_size)
+
+
             for batch in Network._get_shuffled_batches(training_data, batch_size):
                 self.back_propagation(batch)
 
                 for layer in self.layers[1:len(self.layers)]:
-                    layer.biases -= float(learning_rate) / batch_size * layer.bias_gradient
+                    np.multiply(float(learning_rate) / batch_size, layer.bias_gradient, out=layer.bias_gradient)
+                    np.subtract(layer.biases, layer.bias_gradient, out=layer.biases)
 
-                    layer.weights -= (float(learning_rate) / batch_size * layer.weight_gradient +
-                        (learning_rate * regularization / training_data[0].shape[1]) * layer.weights)
-
+                    np.multiply(float(learning_rate) / batch_size, layer.weight_gradient, out=layer.weight_gradient)
+                    np.subtract(layer.weights, (learning_rate * regularization / training_data[0].shape[1]) * layer.weights, layer.weights)
+                    np.subtract(layer.weights, layer.weight_gradient, out=layer.weights)
 
             self._report_performance(training_data, "TRAIN")
             self._report_performance(test_data, "TEST ")
 
     @staticmethod
     def _get_shuffled_batches(data, batch_size):
-	total_examples = data[0].shape[1]
-	permutation = list(np.random.permutation(total_examples))
+        X = data[0]
+        Y = data[1]
+	total_examples = X.shape[1]
+	#permutation = list(np.random.permutation(total_examples))
 
-	shuffled_X = data[0][:, permutation]
-	shuffled_Y = data[1][:, permutation]
+        rng_state = np.random.get_state()
+        np.random.shuffle(X.T)
+        np.random.set_state(rng_state)
+        np.random.shuffle(Y.T)
+	#shuffled_X = data[0][:, permutation]
+	#shuffled_Y = data[1][:, permutation]
 
-	return [[shuffled_X[:, index:index + batch_size], shuffled_Y[:, index:index + batch_size]] for index in range(0, total_examples, batch_size)]
+	return [[X[:, index:index + batch_size], Y[:, index:index + batch_size]] for index in range(0, total_examples, batch_size)]
 
     def _report_performance(self, data, label):
+        total_examples = data[0].shape[1]
+
+        for layer in self.layers:
+            layer.initialize_matrices(total_examples)
+
         result = self.feed_forward(data[0])
 
         # Calculate the expected/actual number which is predicted
@@ -79,7 +95,7 @@ class Network:
         # Aggregate this list into a number of correct predictions
         correct_count = np.sum(correct_predictions)
 
-        print("Accuracy on " + label + ": " + "{0:.2f}".format(100. * correct_count / data[0].shape[1]) + "%")
+        print("Accuracy on " + label + ": " + "{0:.2f}".format(100. * correct_count / total_examples) + "%")
 
     def _reset_gradients(self):
         for layer in self.layers[1:len(self.layers)]:

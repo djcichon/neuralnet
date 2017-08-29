@@ -14,11 +14,6 @@ class Layer:
         self.size = size
         self.activation_function = activation_function
 
-        # TODO: These are misleading.  I think these get overridden elsewhere anyways...
-        self.activations = np.zeros((size, 1))
-        self.preactivations = np.zeros((size, 1))
-        self.errors = np.zeros((size, 1))
-
     def connect_to_previous_layer(self, prev_layer):
         self.prev = prev_layer
 
@@ -32,10 +27,15 @@ class Layer:
             self.biases = np.random.randn(self.size, 1) / math.sqrt(self.size)
             self.bias_gradient = np.empty(self.biases.shape)
 
+    def initialize_matrices(self, batch_size):
+        self.activations = np.zeros((self.size, batch_size))
+        self.preactivations = np.zeros((self.size, batch_size))
+        self.errors = np.zeros((self.size, batch_size))
+
     # Populates the next layer using this layer's activations, weights, and biases
     def forward(self):
-        self.next.preactivations = np.dot(self.next.weights, self.activations) + self.next.biases
-        self.next.activations = self.activation_function.apply(self.next.preactivations)
+        np.add(np.dot(self.next.weights, self.activations, self.next.preactivations), self.next.biases, self.next.preactivations)
+        self.activation_function.apply(self.next.preactivations, self.next.activations)
 
     def calculate_errors(self, expected_outputs, cost_derivative):
         if self.next == None:
@@ -43,11 +43,12 @@ class Layer:
             self.errors = cost_derivative(self.activations, expected_outputs, self.preactivations)
         else:
             # The hidden layers feed errors backwards
-            self.errors = np.dot(self.next.weights.T, self.next.errors) * self.activation_function.apply_derivative(self.preactivations)
+            np.multiply(np.dot(self.next.weights.T, self.next.errors, self.errors), self.activation_function.apply_derivative(self.preactivations), self.errors)
 
     def calculate_bias_gradient(self):
-        return np.sum(self.errors, axis=1, keepdims=True)
+        np.sum(self.errors, axis=1, keepdims=True, out=self.bias_gradient)
+        return self.bias_gradient
     
     def calculate_weight_gradient(self):
-        return np.dot(self.errors, self.prev.activations.T)
-
+        np.dot(self.errors, self.prev.activations.T, self.weight_gradient)
+        return self.weight_gradient
