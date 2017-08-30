@@ -1,9 +1,10 @@
 import numpy as np
 import math
+from activation import *
 
 class Layer:
 
-    def __init__(self, size, activation_function):
+    def __init__(self, size, activation_function=Sigmoid, dropout_keep_prob=1.):
         self.next = None
         self.prev = None
         self.biases = None
@@ -13,6 +14,7 @@ class Layer:
 
         self.size = size
         self.activation_function = activation_function
+        self.dropout_keep_prob = dropout_keep_prob
 
     def connect_to_previous_layer(self, prev_layer):
         self.prev = prev_layer
@@ -35,6 +37,11 @@ class Layer:
     # Populates the next layer using this layer's activations, weights, and biases
     def forward(self):
         np.add(np.dot(self.next.weights, self.activations, self.next.preactivations), self.next.biases, self.next.preactivations)
+
+        # Apply dropout, zero out preactivations for "dead" nodes, or is it the activations that should be dead?  For sigmoid this makes a difference.
+        if self.next.next != None:
+            np.multiply(self.next.dropout, self.next.preactivations, self.next.preactivations)
+
         self.activation_function.apply(self.next.preactivations, self.next.activations)
 
     def calculate_errors(self, expected_outputs, cost_derivative):
@@ -45,6 +52,9 @@ class Layer:
             # The hidden layers feed errors backwards
             np.multiply(np.dot(self.next.weights.T, self.next.errors, self.errors), self.activation_function.apply_derivative(self.preactivations), self.errors)
 
+            # Apply dropout, zero out error for "dead" nodes
+            np.multiply(self.dropout, self.errors, self.errors)
+
     def calculate_bias_gradient(self):
         np.sum(self.errors, axis=1, keepdims=True, out=self.bias_gradient)
         return self.bias_gradient
@@ -52,3 +62,7 @@ class Layer:
     def calculate_weight_gradient(self):
         np.dot(self.errors, self.prev.activations.T, self.weight_gradient)
         return self.weight_gradient
+
+    def update_dropout(self):
+        self.dropout = (np.random.rand(self.size, 1) < self.dropout_keep_prob) * 1.
+

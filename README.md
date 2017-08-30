@@ -13,5 +13,5 @@ pip install -r requirements.txt
 
 # Planned Features
 
-1. Implement dropout
+1. Implement tanh
 2. Layer types (i.e. fully connected, softmax, convolutional)

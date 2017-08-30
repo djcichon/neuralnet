@@ -10,13 +10,11 @@ class Network:
         self.layers = []
         self.cost_function = cost_function
 
-    def add_layer(self, size, activation_function=Sigmoid):
+    def add_layer(self, layer):
         prev_layer = self.layers[-1] if len(self.layers) > 0 else None
-        curr_layer = Layer(size, activation_function)
+        layer.connect_to_previous_layer(prev_layer)
 
-        self.layers.append(curr_layer)
-
-        curr_layer.connect_to_previous_layer(prev_layer)
+        self.layers.append(layer)
 
     def feed_forward(self, inputs):
         self.layers[0].activations = inputs
@@ -48,6 +46,7 @@ class Network:
 
 
             for batch in Network._get_shuffled_batches(training_data, batch_size):
+                self.update_dropout()
                 self.back_propagation(batch)
 
                 for layer in self.layers[1:len(self.layers)]:
@@ -60,6 +59,10 @@ class Network:
 
             self._report_performance(training_data, "TRAIN")
             self._report_performance(test_data, "TEST ")
+
+    def update_dropout(self):
+        for layer in self.layers[1:len(self.layers) - 1]:
+            layer.update_dropout()
 
     @staticmethod
     def _get_shuffled_batches(data, batch_size):
