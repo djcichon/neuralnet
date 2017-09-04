@@ -16,6 +16,10 @@ class Layer:
         self.activation_function = activation_function
         self.dropout_keep_prob = dropout_keep_prob
 
+        self.activations = None
+        self.preactivations = None
+        self.errors = None
+
     def connect_to_previous_layer(self, prev_layer):
         self.prev = prev_layer
 
@@ -30,9 +34,11 @@ class Layer:
             self.bias_gradient = np.empty(self.biases.shape)
 
     def initialize_matrices(self, batch_size):
-        self.activations = np.zeros((self.size, batch_size))
-        self.preactivations = np.zeros((self.size, batch_size))
-        self.errors = np.zeros((self.size, batch_size))
+        # Only update when the batch size changes
+        if self.activations is None or self.activations.shape[1] != batch_size:
+            self.activations = np.zeros((self.size, batch_size))
+            self.preactivations = np.zeros((self.size, batch_size))
+            self.errors = np.zeros((self.size, batch_size))
 
     # Populates the next layer using this layer's activations, weights, and biases
     def forward(self):

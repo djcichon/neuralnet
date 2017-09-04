@@ -41,18 +41,20 @@ class Network:
         for epoch in range(1, epochs+1):
             print("Beginning epoch " + str(epoch))
 
-            for layer in self.layers:
-                layer.initialize_matrices(batch_size)
-
 
             for batch in Network._get_shuffled_batches(training_data, batch_size):
+                for layer in self.layers:
+                    layer.initialize_matrices(batch[0].shape[1])
+
                 self.update_dropout()
                 self.back_propagation(batch)
 
                 for layer in self.layers[1:len(self.layers)]:
+                    # Update the bias (this is made obtuse for performance reasons)
                     np.multiply(float(learning_rate) / batch_size, layer.bias_gradient, out=layer.bias_gradient)
                     np.subtract(layer.biases, layer.bias_gradient, out=layer.biases)
 
+                    # Update the weights (this is made obtuse for performance reasons)
                     np.multiply(float(learning_rate) / batch_size, layer.weight_gradient, out=layer.weight_gradient)
                     np.subtract(layer.weights, (learning_rate * regularization / training_data[0].shape[1]) * layer.weights, layer.weights)
                     np.subtract(layer.weights, layer.weight_gradient, out=layer.weights)
