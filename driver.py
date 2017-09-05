@@ -11,5 +11,5 @@ n.add_layer(Layer(30, Sigmoid))
 n.add_layer(Layer(30, Sigmoid))
 n.add_layer(Layer(10, Sigmoid))
 
-n.SGD(training, test, 100, 0.1, 0, 1024)
+n.SGD(training, test, 100, 0.1, 0, 10)
 
