@@ -13,5 +13,6 @@ pip install -r requirements.txt
 
 # Planned Features
 
-1. Implement Adam
-2. Layer types (i.e. fully connected, softmax, convolutional)
+1. Fix issue with ReLU, or find parameters that make it work
+2. Implement Adam
+3. Layer types (i.e. fully connected, softmax, convolutional)
