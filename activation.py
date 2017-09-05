@@ -26,6 +26,23 @@ class Sigmoid(ActivationFunction):
         sig = Sigmoid.apply(preactivations)
         return sig * (1 - sig)
 
+class Tanh(ActivationFunction):
+    @staticmethod
+    def apply(preactivations, activations=None):
+        if activations == None:
+            activations = np.empty(preactivations.shape)
+        e_x = np.exp(preactivations)
+        e_neg_x = np.exp(-preactivations)
+
+        np.divide(e_x - e_neg_x, e_x + e_neg_x, out=activations)
+
+        return activations
+
+    @staticmethod
+    def apply_derivative(preactivations):
+        tanh = Tanh.apply(preactivations)
+        return 1 - np.power(tanh, 2)
+
 class ReLU(ActivationFunction):
     @staticmethod
     def apply(preactivations, activations=None):

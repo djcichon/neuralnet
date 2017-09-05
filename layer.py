@@ -51,7 +51,7 @@ class Layer:
         if self.next.next != None:
             np.multiply(self.next.dropout, self.next.preactivations, self.next.preactivations)
 
-        self.activation_function.apply(self.next.preactivations, self.next.activations)
+        self.next.activation_function.apply(self.next.preactivations, self.next.activations)
 
     def calculate_errors(self, expected_outputs, cost_derivative):
         if self.next == None:
