@@ -13,6 +13,5 @@ pip install -r requirements.txt
 
 # Planned Features
 
-1. Implement gradient checking, I think there is a bug with multiple hidden layers
-2. Implement tanh
-3. Layer types (i.e. fully connected, softmax, convolutional)
+1. Implement Adam
+2. Layer types (i.e. fully connected, softmax, convolutional)

@@ -44,12 +44,12 @@ class Layer:
 
     # Populates the next layer using this layer's activations, weights, and biases
     def forward(self):
-        np.add(np.dot(self.next.weights, self.activations, self.next.preactivations), self.next.biases, self.next.preactivations)
+        # Apply dropout before feeding forward to the next layer
+        if self.prev is not None:
+            np.multiply(self.dropout, self.activations, self.activations)
+            np.divide(self.activations, self.dropout_keep_prob, self.activations)
 
-        # TODO: Don't I need to divide by dropout_keep_prob to normalize values?
-        # Apply dropout, zero out preactivations for "dead" nodes, or is it the activations that should be dead?  For sigmoid this makes a difference.
-        if self.next.next != None:
-            np.multiply(self.next.dropout, self.next.preactivations, self.next.preactivations)
+        np.add(np.dot(self.next.weights, self.activations, self.next.preactivations), self.next.biases, self.next.preactivations)
 
         self.next.activation_function.apply(self.next.preactivations, self.next.activations)
 
